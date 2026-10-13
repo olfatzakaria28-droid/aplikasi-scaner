@@ -4,6 +4,29 @@ document.addEventListener("DOMContentLoaded", () => {
     const copyBtn = document.getElementById("copy-btn");
     const openLinkBtn = document.getElementById("open-link-btn");
 
+    // Fungsi untuk membuat suara beep menggunakan Web Audio API
+    function playBeepSound() {
+        try {
+            const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            const oscillator = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+
+            oscillator.type = "sine";
+            oscillator.frequency.setValueAtTime(800, audioCtx.currentTime); // Frekuensi nada (Hz)
+            
+            gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime); // Volume
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.15);
+
+            oscillator.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+
+            oscillator.start();
+            oscillator.stop(audioCtx.currentTime + 0.15); // Durasi beep (0.15 detik)
+        } catch (e) {
+            console.error("Gagal memutar audio:", e);
+        }
+    }
+
     function isValidURL(string) {
         try {
             const url = new URL(string);
@@ -13,7 +36,19 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     }
 
+    let lastScannedText = "";
+
     function onScanSuccess(decodedText, decodedResult) {
+        // Mencegah beep berulang jika QR Code yang sama masih terdeteksi
+        if (decodedText === lastScannedText && !resultBox.classList.contains("hidden")) {
+            return;
+        }
+
+        lastScannedText = decodedText;
+
+        // Memutar suara beep saat berhasil scan
+        playBeepSound();
+
         // Tampilkan box hasil
         resultBox.classList.remove("hidden");
         resultText.innerText = decodedText;
@@ -28,7 +63,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     function onScanFailure(error) {
-        // Callback saat frame kamera belum menemukan QR Code (bisa diabaikan agar log tidak penuh)
+        // Callback saat frame kamera belum menemukan QR Code
     }
 
     // Inisialisasi Scanner
