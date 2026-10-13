@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QR Code Web Scanner</title>
+    <link rel="stylesheet" href="style.css">
+    <!-- Import Library Html5-QRCode via CDN -->
+    <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+</head>
+<body>
+    <div class="container">
+        <h1>QR Code Scanner</h1>
+        <p class="subtitle">Arahkan kamera ke QR Code untuk melakukan pemindaian</p>
+
+        <!-- Area Video Scanner -->
+        <div id="reader-container">
+            <div id="reader"></div>
+        </div>
+
+        <!-- Area Hasil Scan -->
+        <div id="result-box" class="hidden">
+            <h3>Hasil Pemindaian:</h3>
+            <p id="result-text"></p>
+            <div class="action-buttons">
+                <button id="copy-btn">Salin Teks</button>
+                <a id="open-link-btn" href="#" target="_blank" class="hidden">Buka Link</a>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
