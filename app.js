@@ -4,24 +4,47 @@ document.addEventListener("DOMContentLoaded", () => {
     const copyBtn = document.getElementById("copy-btn");
     const openLinkBtn = document.getElementById("open-link-btn");
 
-    // Fungsi untuk membuat suara beep menggunakan Web Audio API
+    let audioCtx = null;
+
+    // Menyiapkan / mengaktifkan AudioContext dari interaksi pengguna
+    function initAudio() {
+        if (!audioCtx) {
+            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        }
+        if (audioCtx.state === "suspended") {
+            audioCtx.resume();
+        }
+    }
+
+    // Aktifkan audio ketika ada klik atau sentuhan pertama di layar
+    document.body.addEventListener("click", initAudio, { once: true });
+    document.body.addEventListener("touchstart", initAudio, { once: true });
+
+    // Fungsi membunyikan bip
     function playBeepSound() {
         try {
-            const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-            const oscillator = audioCtx.createOscillator();
-            const gainNode = audioCtx.createGain();
+            initAudio();
 
-            oscillator.type = "sine";
-            oscillator.frequency.setValueAtTime(800, audioCtx.currentTime); // Frekuensi nada (Hz)
-            
-            gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime); // Volume
-            gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.15);
+            if (audioCtx && audioCtx.state === "running") {
+                const oscillator = audioCtx.createOscillator();
+                const gainNode = audioCtx.createGain();
 
-            oscillator.connect(gainNode);
-            gainNode.connect(audioCtx.destination);
+                oscillator.type = "sine";
+                oscillator.frequency.setValueAtTime(800, audioCtx.currentTime); // 800 Hz
 
-            oscillator.start();
-            oscillator.stop(audioCtx.currentTime + 0.15); // Durasi beep (0.15 detik)
+                gainNode.gain.setValueAtTime(0.2, audioCtx.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.15);
+
+                oscillator.connect(gainNode);
+                gainNode.connect(audioCtx.destination);
+
+                oscillator.start();
+                oscillator.stop(audioCtx.currentTime + 0.15);
+            } else {
+                // Fallback jika AudioContext terblokir: gunakan HTML5 Audio sederhana
+                const soundEffect = new Audio("data:audio/wav;base64,UklGRl9vT19XQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YUtvT18AAAAA");
+                soundEffect.play().catch(() => {});
+            }
         } catch (e) {
             console.error("Gagal memutar audio:", e);
         }
@@ -39,21 +62,18 @@ document.addEventListener("DOMContentLoaded", () => {
     let lastScannedText = "";
 
     function onScanSuccess(decodedText, decodedResult) {
-        // Mencegah beep berulang jika QR Code yang sama masih terdeteksi
         if (decodedText === lastScannedText && !resultBox.classList.contains("hidden")) {
             return;
         }
 
         lastScannedText = decodedText;
 
-        // Memutar suara beep saat berhasil scan
+        // Bunyikan bip saat berhasil scan
         playBeepSound();
 
-        // Tampilkan box hasil
         resultBox.classList.remove("hidden");
         resultText.innerText = decodedText;
 
-        // Cek jika teks berupa URL / link
         if (isValidURL(decodedText)) {
             openLinkBtn.href = decodedText;
             openLinkBtn.classList.remove("hidden");
@@ -63,22 +83,20 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     function onScanFailure(error) {
-        // Callback saat frame kamera belum menemukan QR Code
+        // Abaikan pencarian frame
     }
 
-    // Inisialisasi Scanner
     const html5QrcodeScanner = new Html5QrcodeScanner(
         "reader",
         { 
             fps: 10, 
             qrbox: { width: 250, height: 250 } 
         },
-        /* verbose= */ false
+        false
     );
 
     html5QrcodeScanner.render(onScanSuccess, onScanFailure);
 
-    // Event listener button Salin Teks
     copyBtn.addEventListener("click", () => {
         const textToCopy = resultText.innerText;
         if (textToCopy) {
